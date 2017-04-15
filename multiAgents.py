@@ -1,6 +1,7 @@
 from util import manhattanDistance
 from game import Directions
 import random, util
+import sys
 
 from game import Agent
 
@@ -63,35 +64,44 @@ class ReflexAgent(Agent):
         prevCapsules = currentGameState.getCapsules()
         newCapsules = successorGameState.getCapsules()
 
-        utility = 0.0
+        #return maximum availablenumber if you've won
+        if successorGameState.isWin():
+          return sys.float_info.max
+
+        utility = successorGameState.getScore()
 
         #subtract for ghost distance except under scared timer
         for ghostState in newGhostStates:
           mDistance = manhattanDistance(ghostState.configuration.getPosition(), newPos)
-          if ghostState.scaredTimer > 0:
-            utility = utility - mDistance
-          elif 5 > mDistance:
-            utility = utility + mDistance/10
-          elif 2 > mDistance:
-            utility = utility - 100
+          if ghostState.scaredTimer <= 1:
+            #be careful when ghost is close
+            if 5 > mDistance:
+              utility += mDistance
+            #when he's super close, follow the advice of the Monty Python knights and RUN AWAY!
+            elif 2 > mDistance:
+              utility += - 100
 
-        #get closer to food
-        for i, food in enumerate(newFood):
-          utility = utility - manhattanDistance(food, newPos)/(i+1)
-        for i, food in enumerate(prevFood):
-          utility = utility + manhattanDistance(food, newPos)/(i+1)
+        #eat food if you can
+        if (currentGameState.getNumFood() > successorGameState.getNumFood()):
+          utility += 20
+        #eat capsules if you can
+        if (newPos in newCapsules):
+          utility += 50
+        for capsule in newCapsules:
+          utility -= manhattanDistance(capsule, newPos)
 
-        #get closer to capsules
-        for i, capsule in enumerate(newCapsules):
-          utility = utility - manhattanDistance(capsule, newPos)/(i+1)
-        for i, capsule in enumerate(prevCapsules):
-          utility = utility + manhattanDistance(capsule, newPos)/(i+1)
+        #eat closest food first, all others are pretty much irrelevant
+        closestFood = sys.float_info.max
+        for food in newFood.asList():
+          closestFood = min(manhattanDistance(food, newPos), closestFood)
+        utility -= closestFood
 
-        utility = utility + successorGameState.getScore()
+        #waiting for the ghost to eat you is bad
+        if action == Directions.STOP:
+          utility -= 5
 
         return utility
         #return successorGameState.getScore()
-        
 
 def scoreEvaluationFunction(currentGameState):
     """
