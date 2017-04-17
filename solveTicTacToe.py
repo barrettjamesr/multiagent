@@ -137,9 +137,149 @@ class TicTacToeAgent():
         """ 
           You can initialize some variables here, but please do not modify the input parameters.
         """
-        {}
+        self.maxTimeOut = 5
+
+    #sum of all the trues
+    def trueValues(self, board):
+        #convert to 1D if requried
+        if 3==len(board):
+            board = board[0] + board[1] + board[2]
+        return (sum([i for i, x in enumerate(board) if x]), board.count(True))
+
+    #rotate the board around until you get the minimum state for comparison
+    def transposeMiniBoard(self, board):
+        #break board into 2d array if required
+        if 3!=len(board):
+            board = [board[i:i+3] for i in range(0, len(board), 3)]
+        lowestBoard = board[:]
+        lowestValue = self.trueValues(board)
+
+        # rotated = zip(*original[::-1])
+        # list(map(list, zip(*l)))
+        if lowestValue > self.trueValues(list(map(list, zip(*board)))):
+            lowestBoard = list(map(list, zip(*board)))
+            lowestValue = self.trueValues(lowestBoard)
+
+        for i in range(3):
+            #rotate board
+            board = list(map(list, zip(*board)))[::-1]
+            if lowestValue > self.trueValues(board):
+                lowestBoard = board[:]
+                lowestValue = self.trueValues(lowestBoard)
+
+            #flip board
+            board = list(map(list, zip(*board)))
+            if lowestValue > self.trueValues(board):
+                lowestBoard = board[:]
+                lowestValue = self.trueValues(lowestBoard)
+
+            #flip board back
+            board = list(map(list, zip(*board)))
+
+        return lowestBoard
+
+    def evalGame(self, gameState, gameRules):
+        """
+        contains dictionary of 102 non-isomorphic positions
+        winning combos = c2, a, b2, bc
+        win returns true, lose returns false
+
+        anything containing d or ab is a loss
+
+        """
+        a=2
+        b=3
+        c=5
+        d=7
+
+        winners = [c*c, a, b*b, b*c]
+        evaluation = 1
+
+        for board in gameState.boards:
+            #rotate board to match with 102 nonisompophic ways
+            board = self.transposeMiniBoard(board)
+            trueValues, numTrues = self.trueValues(board)
+
+            if gameRules.deadTest(board[0] + board[1] + board[2]):
+                evaluation = evaluation * 1
+            elif 0==numTrues:
+                evaluation = evaluation * c
+            elif 1==numTrues:
+                if board[1][1]:
+                    evaluation = evaluation * c * c
+                else:
+                    evaluation = evaluation * 1
+            elif 6==numTrues:
+                evaluation = evaluation * a
+            elif 5==numTrues:
+                if (board[0][0] and board[0][1] and board[1][0] and board[1][2]):
+                    evaluation = evaluation * b
+                else:
+                    evaluation = evaluation * a
+            elif 2==numTrues:
+                if 1==trueValues:
+                    #print(d)
+                    return False
+                elif 8==trueValues or (4==trueValues and not board[0][0]):
+                    evaluation = evaluation * a
+                else:
+                    evaluation = evaluation * b
+            elif 3==numTrues:
+                if 12==trueValues:
+                    evaluation = evaluation * 1
+                elif 4==trueValues or (9==trueValues and board[0][1] and board[1][0]):
+                    evaluation = evaluation * b
+                elif (9==trueValues and not board[0][1]) or (6==trueValues and not board[0][1]) or (5==trueValues and not board[0][1]):
+                    evaluation = evaluation * a
+                else:
+                    #print(d)
+                    return False
+            elif 4==numTrues:
+                if (12==trueValues and not board[0][0]) or (13==trueValues and board[0][1]):
+                    #print(d)
+                    return False
+                elif 8==trueValues or 9==trueValues or (16==trueValues and not board[1][1]) or (12==trueValues and board[1][0] and board[0][1]):
+                    evaluation = evaluation * a
+                else:
+                    evaluation = evaluation * b
+            else:
+                print("wtf")
+
+        for i in range(1000000):
+            trueValues, numTrues = self.trueValues(board)
+
+
+        #print(evaluation) 
+        return(0<winners.count(evaluation))
+
+
+
 
     def getAction(self, gameState, gameRules):
+
+        actions = gameState.getLegalActions(gameRules)
+        start_time = time.time()
+
+        #to stop error pick randomly if no move available 
+        winnerAction = random.choice(actions)
+
+        for action in actions:
+            newGameState = gameState.generateSuccessor(action)
+            if gameRules.isGameOver(gameState.boards): continue
+
+            timed_func = util.TimeoutFunction(self.evalGame, int(self.maxTimeOut))
+            try:
+                if timed_func(newGameState, gameRules):
+                    winnerAction = action
+                    
+            except util.TimeoutFunctionException:
+                print("Move Timeout!")
+                break
+
+        #print(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules)) 
+
+        return winnerAction
+
         util.raiseNotDefined()
 
 
@@ -165,7 +305,11 @@ class keyboardAgent():
         actions = gameState.getLegalActions(gameRules)
         return action in actions
 
+
     def getAction(self, gameState, gameRules):
+
+        print (str(self.evalGame(gameState, gameRules)))
+
         action = input("Your move: ")
         while not self.checkUserInput(gameState, action, gameRules):
             print("Invalid move, please input again")
@@ -183,7 +327,7 @@ class Game():
         """
         self.numOfGames  = numOfGames
         self.muteOutput  = muteOutput
-        self.maxTimeOut  = 30 
+        self.maxTimeOut  = 30
 
         self.AIforHuman  = AIforHuman
         self.gameRules   = GameRules()

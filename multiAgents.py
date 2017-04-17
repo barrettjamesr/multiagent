@@ -76,10 +76,10 @@ class ReflexAgent(Agent):
           if ghostState.scaredTimer <= 1:
             #be careful when ghost is close
             if 5 > mDistance:
-              utility += mDistance
+              utility -= (10-mDistance)
             #when he's super close, follow the advice of the Monty Python knights and RUN AWAY!
             elif 2 > mDistance:
-              utility += - 100
+              utility -= 100
 
         #eat food if you can
         if (currentGameState.getNumFood() > successorGameState.getNumFood()):
@@ -161,7 +161,54 @@ class MinimaxAgent(MultiAgentSearchAgent):
           gameState.isLose():
             Returns whether or not the game state is a losing state
         """
-        "*** YOUR CODE HERE ***"
+
+        def minValue(gameState, ghost, d):
+          val = sys.maxsize
+
+          for action in gameState.getLegalActions(ghost):
+            tempState =gameState.generateSuccessor(ghost, action)
+            tempVal, action = minimaxDecision(tempState, ghost +1, d)
+
+            if tempVal < val:
+              val = tempVal
+
+          return val
+
+        def maxValue(gameState, d):
+          val = -sys.maxsize
+          #default best move is stop
+          bestAction = 'Stop'
+
+          for action in gameState.getLegalActions(0):
+            tempState =gameState.generateSuccessor(0, action)
+            tempVal, tempAction = minimaxDecision(tempState, 1, d)
+            if tempVal > val:
+              val = tempVal
+              bestAction = action
+
+          return (val, bestAction)
+
+        #depending on whose move and depth, either maximise or minimise
+        def minimaxDecision(gameState, agent, d):
+          #each player gets on move for each depth
+          if agent >= gameState.getNumAgents():
+            agent = 0
+            d += 1
+          #return eval fn for  
+          if (gameState.isWin() or gameState.isLose() or self.depth < d):
+            return (self.evaluationFunction(gameState), '')
+          #pacman's move gets max value, the ghosts get min value          
+          if (agent == 0):
+            return maxValue(gameState, d)
+          else:
+            return (minValue(gameState, agent, d), '')
+
+        #first depth = 1, first agent = pacman (zero)
+        d = 1
+        firstAgent = 0
+        value, action = minimaxDecision(gameState, firstAgent, d)
+        return action
+
         util.raiseNotDefined()
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
@@ -173,7 +220,57 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
           Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
+        def minValue(gameState, ghost, d, alpha, beta):
+          val = sys.maxsize
+
+          for action in gameState.getLegalActions(ghost):
+            tempState =gameState.generateSuccessor(ghost, action)
+            tempVal, action = abPruning(tempState, ghost +1, d, alpha, beta)
+            if tempVal < val:
+              val = tempVal
+            if tempVal < alpha:
+                return val
+            beta = min(beta, tempVal)
+
+          return val
+
+        def maxValue(gameState, d, alpha, beta):
+          val = -sys.maxsize
+          #default best move is stop
+          bestAction = 'Stop'
+
+          for action in gameState.getLegalActions(0):
+            tempState =gameState.generateSuccessor(0, action)
+            tempVal, tempAction = abPruning(tempState, 1, d, alpha, beta)
+            if tempVal > val:
+              val = tempVal
+              bestAction = action
+            if tempVal > beta:
+                return (val, action)
+            alpha = max(alpha, tempVal)
+          return (val, bestAction)
+
+        #depending on whose move and depth, either maximise or minimise
+        def abPruning(gameState, agent, d, alpha, beta):
+          #each player gets on move for each depth
+          if agent >= gameState.getNumAgents():
+            agent = 0
+            d += 1
+          #return eval fn for
+          if (gameState.isWin() or gameState.isLose() or self.depth < d):
+            return (self.evaluationFunction(gameState), '')
+          #pacman's move gets max value, the ghosts get min value          
+          if (agent == 0):
+            return maxValue(gameState, d, alpha, beta)
+          else:
+            return (minValue(gameState, agent, d, alpha, beta), '')
+
+        #first depth = 1, first agent = pacman (zero)
+        d = 1
+        firstAgent = 0
+        value, action = abPruning(gameState, firstAgent, d, -sys.maxsize, sys.maxsize)
+        return action
+
         util.raiseNotDefined()
         
 
@@ -190,17 +287,119 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           legal moves.
         """
         "*** YOUR CODE HERE ***"
+
+        def expectiValue(gameState, ghost, d):
+          val = 0
+          legalActions = gameState.getLegalActions(ghost)
+
+          for action in legalActions:
+            tempState =gameState.generateSuccessor(ghost, action)
+            tempVal, action = expectimaxDecision(tempState, ghost +1, d)
+            val += tempVal
+
+          return val / len(legalActions)
+
+        def maxValue(gameState, d):
+          val = -sys.maxsize
+          #default best move is stop
+          bestAction = 'Stop'
+
+          for action in gameState.getLegalActions(0):
+            tempState =gameState.generateSuccessor(0, action)
+            tempVal, tempAction = expectimaxDecision(tempState, 1, d)
+            if tempVal > val:
+              val = tempVal
+              bestAction = action
+
+          return (val, bestAction)
+
+        #depending on whose move and depth, either maximise or minimise
+        def expectimaxDecision(gameState, agent, d):
+          #each player gets on move for each depth
+          if agent >= gameState.getNumAgents():
+            agent = 0
+            d += 1
+          #return eval fn for  
+          if (gameState.isWin() or gameState.isLose() or self.depth < d):
+            return (self.evaluationFunction(gameState), '')
+          #pacman's move gets max value, the ghosts get min value          
+          if (agent == 0):
+            return maxValue(gameState, d)
+          else:
+            return (expectiValue(gameState, agent, d), '')
+
+        #first depth = 1, first agent = pacman (zero)
+        d = 1
+        firstAgent = 0
+        value, action = expectimaxDecision(gameState, firstAgent, d)
+        return action
+
         util.raiseNotDefined()
 
 def betterEvaluationFunction(currentGameState):
-    """
-      Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
-      evaluation function (question 5).
+  """
+    Your extreme ghost-hunting, pellet-nabbing, food-gobbling, unstoppable
+    evaluation function (question 5).
 
-      DESCRIPTION: <write something here so we know what you did>
-    """
-    "*** YOUR CODE HERE ***"
-    util.raiseNotDefined()
+    DESCRIPTION: <write something here so we know what you did>
+  """
+  "*** YOUR CODE HERE ***"
+  evaluation = currentGameState.getScore()
+  #return maximum availablenumber if you've won
+  if currentGameState.isWin():
+    return sys.float_info.max
+  newPos = currentGameState.getPacmanPosition()
+  #subtract for ghost distance except under scared timer
+  for ghostState in currentGameState.getGhostStates():
+    mDistance = manhattanDistance(ghostState.configuration.getPosition(), newPos)
+    if ghostState.scaredTimer <= 1:
+      #be careful when ghost is close
+      if 5 > mDistance:
+        evaluation -= (10-mDistance)
+      #when he's super close, follow the advice of the Monty Python knights and RUN AWAY!
+      elif 2 > mDistance:
+        evaluation -= 100
+  for capsule in currentGameState.getCapsules():
+    evaluation -= manhattanDistance(capsule, newPos)
+  sumClosestFood = 0
+  closestFood = sys.float_info.max
+  for food in currentGameState.getFood().asList():
+    closestFood = min(manhattanDistance(food, newPos), closestFood)
+    sumClosestFood -= manhattanDistance(food, newPos)/10
+  evaluation -= closestFood + currentGameState.getNumFood() * 5 - sumClosestFood
+
+  """
+  for action in currentGameState.getLegalActions():
+    tempEval = 0
+    successorGameState = currentGameState.generatePacmanSuccessor(action)
+    tempEval = successorGameState.getScore()
+    #return maximum availablenumber if you've won
+    if successorGameState.isWin():
+      return sys.float_info.max
+    newPos = successorGameState.getPacmanPosition()
+    #subtract for ghost distance except under scared timer
+    for ghostState in successorGameState.getGhostStates():
+      mDistance = manhattanDistance(ghostState.configuration.getPosition(), newPos)
+      if ghostState.scaredTimer <= 1:
+        #be careful when ghost is close
+        if 10 > mDistance:
+          tempEval -= (10-mDistance)*10
+        #when he's super close, follow the advice of the Monty Python knights and RUN AWAY!
+        elif 2 > mDistance:
+          tempEval  -= 1000
+    for capsule in successorGameState.getCapsules():
+      tempEval -= manhattanDistance(capsule, newPos)
+    sumClosestFood = 0
+    closestFood = sys.float_info.max
+    for food in successorGameState.getFood().asList():
+      closestFood = min(manhattanDistance(food, newPos), closestFood)
+      sumClosestFood -= manhattanDistance(food, newPos)/10
+    tempEval += sumClosestFood - successorGameState.getNumFood() * 10 + closestFood * 2
+    evaluation += tempEval /10
+  """
+
+  return evaluation
+  util.raiseNotDefined()
 
 # Abbreviation
 better = betterEvaluationFunction
