@@ -137,7 +137,7 @@ class TicTacToeAgent():
         """ 
           You can initialize some variables here, but please do not modify the input parameters.
         """
-        self.maxTimeOut = 5
+        self.maxTimeOut = 30
 
     #sum of all the trues
     def trueValues(self, board):
@@ -245,43 +245,51 @@ class TicTacToeAgent():
             else:
                 print("wtf")
 
-        for i in range(1000000):
-            trueValues, numTrues = self.trueValues(board)
-
-
         #print(evaluation) 
         return(0<winners.count(evaluation))
 
-
-
-
-    def getAction(self, gameState, gameRules):
+    def chooseAction(self, gameState, gameRules, player, depth):
+        #player = true for this player.
+        if gameRules.isGameOver(gameState.boards):
+            return ("", player)
 
         actions = gameState.getLegalActions(gameRules)
-        start_time = time.time()
-
-        #to stop error pick randomly if no move available 
-        winnerAction = random.choice(actions)
+        #to stop error pick randomly if no move available
 
         for action in actions:
             newGameState = gameState.generateSuccessor(action)
-            if gameRules.isGameOver(gameState.boards): continue
+            if gameRules.isGameOver(newGameState.boards):
+                continue
+            elif depth > 0:
+                #next action for newGameState, same rules, other player, and new depth.
+                tempAction, winnerPlayer = self.chooseAction(newGameState, gameRules, not player, depth-1)
+                if winnerPlayer == player:
+                    return action, player
+            elif self.evalGame(newGameState, gameRules):
+                return action, player
 
-            timed_func = util.TimeoutFunction(self.evalGame, int(self.maxTimeOut))
-            try:
-                if timed_func(newGameState, gameRules):
-                    winnerAction = action
-                    
-            except util.TimeoutFunctionException:
-                print("Move Timeout!")
-                break
+        #print("Player " + str(player) + " depth " + str(depth) + " moves ")
+        #print(actions)
+        #print(gameState.boards)
+        return random.choice(actions), not player
+
+    def getAction(self, gameState, gameRules):
+
+        start_time = time.time()
+
+        timed_func = util.TimeoutFunction(self.chooseAction, int(self.maxTimeOut))
+        try:
+            winnerAction, winnerPlayer = timed_func(gameState, gameRules, True, 4)
+
+        except util.TimeoutFunctionException:
+            print("Move Timeout!")
+            winnerAction = random.choice(gameState.getLegalActions(gameRules))
 
         #print(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules)) 
 
         return winnerAction
 
         util.raiseNotDefined()
-
 
 class randomAgent():
     """
@@ -352,6 +360,7 @@ class Game():
         for i in range(self.numOfGames):
             gameState = GameState()
             agentIndex = 0 # 0 for First Player (AI), 1 for Second Player (Human)
+            print("start time: " + str(time.ctime(int(time.time()))))
             while True:
                 if agentIndex == 0: 
                     timed_func = util.TimeoutFunction(self.AIPlayer.getAction, int(self.maxTimeOut))
@@ -376,6 +385,7 @@ class Game():
 
                 agentIndex  = (agentIndex + 1) % 2
             if agentIndex == 0:
+                print("end time: " + str(time.ctime(int(time.time()))))
                 print("****player 2 wins game %d!!****" % (i+1))
             else:
                 numOfWins += 1
