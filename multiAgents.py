@@ -176,7 +176,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
 
         def maxValue(gameState, d):
           val = -sys.maxsize
-          #default best move is stop
+          #default move is stop
           bestAction = 'Stop'
 
           for action in gameState.getLegalActions(0):

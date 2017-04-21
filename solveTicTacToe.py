@@ -138,6 +138,8 @@ class TicTacToeAgent():
           You can initialize some variables here, but please do not modify the input parameters.
         """
         self.maxTimeOut = 30
+        self.depth = 3
+        self.exploredSet = []
 
     #sum of all the trues
     def trueValues(self, board):
@@ -178,15 +180,14 @@ class TicTacToeAgent():
 
         return lowestBoard
 
-    def evalGame(self, gameState, gameRules):
-        """
-        contains dictionary of 102 non-isomorphic positions
-        winning combos = c2, a, b2, bc
-        win returns true, lose returns false
+    """
+    def evalGame(self, gameState, gameRules, returnValue):
+        #contains dictionary of 102 non-isomorphic positions
+        #winning combos = c2, a, b2, bc
+        #win returns true, lose returns false
 
-        anything containing d or ab is a loss
+        #anything containing d or ab is a loss
 
-        """
         a=2
         b=3
         c=5
@@ -212,14 +213,18 @@ class TicTacToeAgent():
             elif 6==numTrues:
                 evaluation = evaluation * a
             elif 5==numTrues:
-                if (board[0][0] and board[0][1] and board[1][0] and board[1][2]):
+                if (board[0][1] and board[1][0] and board[1][2]):
                     evaluation = evaluation * b
                 else:
                     evaluation = evaluation * a
             elif 2==numTrues:
                 if 1==trueValues:
                     #print(d)
-                    return False
+                    #return False
+                    if returnValue:
+                        return a*d
+                    else:
+                        return False
                 elif 8==trueValues or (4==trueValues and not board[0][0]):
                     evaluation = evaluation * a
                 else:
@@ -233,12 +238,20 @@ class TicTacToeAgent():
                     evaluation = evaluation * a
                 else:
                     #print(d)
-                    return False
+                    #return False
+                    if returnValue:
+                        return d
+                    else:
+                        return False
             elif 4==numTrues:
                 if (12==trueValues and not board[0][0]) or (13==trueValues and board[0][1]):
                     #print(d)
-                    return False
-                elif 8==trueValues or 9==trueValues or (16==trueValues and not board[1][1]) or (12==trueValues and board[1][0] and board[0][1]):
+                    #return False
+                    if returnValue:
+                        return a * b
+                    else:
+                        return False
+                elif 8==trueValues or (9==trueValues and not board[1][1]) or (16==trueValues and not board[1][1]) or (12==trueValues and board[1][0] and board[0][1]):
                     evaluation = evaluation * a
                 else:
                     evaluation = evaluation * b
@@ -246,40 +259,586 @@ class TicTacToeAgent():
                 print("wtf")
 
         #print(evaluation) 
-        return(0<winners.count(evaluation))
+        if returnValue:
+            return evaluation
+        else:
+            return (0<winners.count(evaluation))
+    """
 
-    def chooseAction(self, gameState, gameRules, player, depth):
-        #player = true for this player.
-        if gameRules.isGameOver(gameState.boards):
-            return ("", player)
+    def evalGame(self, gameState, gameRules, returnValue):
+        #contains dictionary of 102 non-isomorphic positions
+        #winning combos = c2, a, b2, bc
+        #win returns true, lose returns false
 
-        actions = gameState.getLegalActions(gameRules)
-        #to stop error pick randomly if no move available
+        #anything containing d or ab is a loss
 
-        for action in actions:
-            newGameState = gameState.generateSuccessor(action)
-            if gameRules.isGameOver(newGameState.boards):
-                continue
-            elif depth > 0:
-                #next action for newGameState, same rules, other player, and new depth.
-                tempAction, winnerPlayer = self.chooseAction(newGameState, gameRules, not player, depth-1)
-                if winnerPlayer == player:
-                    return action, player
-            elif self.evalGame(newGameState, gameRules):
-                return action, player
+        a=2
+        b=3
+        c=5
+        d=7
 
-        #print("Player " + str(player) + " depth " + str(depth) + " moves ")
-        #print(actions)
-        #print(gameState.boards)
-        return random.choice(actions), not player
+        winners = [c*c, a, b*b, b*c]
+        evaluation = 1
+
+        nonisomorphicC =  [[[False, False, False], [False, False, False], [False, False, False]]]
+        nonisomorphicCC =  [[[False, False, False], [False, True, False], [False, False, False]]]
+        nonisomorphic1 =  [[[False, True, False], [False, False, False], [False, False, False]],
+                        [[True, False, False], [False, False, False], [False, False, False]],
+                        [[True, False, False], [False, False, True], [False, True, False]]
+                        ]
+
+        nonisomorphicA =  [[[True, False, False], [False, False, False], [False, False, True]],
+                        [[False, True, False], [True, False, False], [False, False, False]],
+                        [[False, True, False], [False, False, False], [False, True, False]],
+                        [[True, True, False], [False, False, False], [True, False, False]],
+                        [[True, False, True], [False, True, False], [False, False, False]],
+                        [[True, False, True], [False, False, False], [False, True, False]],
+                        [[True, False, False], [False, True, True], [False, False, False]],
+                        [[True, True, False], [True, True, False], [False, False, False]],
+                        [[True, True, False], [True, False, True], [False, False, False]],
+                        [[True, True, False], [True, False, False], [False, False, True]],
+                        [[True, True, False], [False, False, False], [False, True, True]],
+                        [[True, False, True], [False, False, False], [True, False, True]],
+                        [[False, True, False], [True, False, True], [False, True, False]],
+                        [[True, True, False], [False, True, True], [True, False, False]],
+                        [[True, True, False], [False, False, True], [True, True, False]],
+                        [[True, True, False], [False, False, True], [True, False, True]],
+                        [[True, True, False], [True, False, True], [False, True, True]]
+                        ]
+        nonisomorphicB =  [[[True, False, True], [False, False, False], [False, False, False]],
+                        [[True, False, False], [False, True, False], [False, False, False]],
+                        [[True, False, False], [False, False, True], [False, False, False]],
+                        [[False, True, False], [False, True, False], [False, False, False]],
+                        [[True, True, False], [True, False, False], [False, False, False]],
+                        [[False, True, False], [True, False, True], [False, False, False]],
+                        [[True, True, False], [False, True, True], [False, False, False]],
+                        [[True, True, False], [False, True, False], [True, False, False]],
+                        [[True, True, False], [False, False, True], [True, False, False]],
+                        [[True, True, False], [False, False, False], [True, True, False]],
+                        [[True, True, False], [False, False, False], [True, False, True]],
+                        [[True, False, True], [False, True, False], [False, True, False]],
+                        [[True, False, False], [False, True, True], [False, True, False]],
+                        [[True, True, False], [True, False, True], [False, True, False]],
+                        [[True, True, False], [True, False, True], [False, False, True]]
+                        ]
+        nonisomorphicAD =  [[[True, True, False], [False, False, False], [False, False, False]]]
+        nonisomorphicD =  [[[True, True, False], [False, False, True], [False, False, False]],
+                        [[True, True, False], [False, False, False], [False, True, False]],
+                        [[True, True, False], [False, False, False], [False, False, True]]
+                        ]
+        nonisomorphicAB =  [[[True, True, False], [False, True, False], [False, False, False]],
+                        [[True, False, True], [False, False, False], [True, False, False]],
+                        [[False, True, False], [True, True, False], [False, False, False]],
+                        [[True, True, False], [False, False, True], [False, True, False]],
+                        [[True, True, False], [False, False, True], [False, False, True]]
+                        ]
+
+        for board in gameState.boards:
+            #break board into 2d array if required
+            if 3!=len(board):
+                board = [board[i:i+3] for i in range(0, len(board), 3)]
+
+            if gameRules.deadTest(board[0] + board[1] + board[2]):
+                evaluation = evaluation * 1
+            else:
+                #rotate board to match with 102 nonisompophic ways
+                found = False
+                multiple = 0
+
+                for i in range(4):
+                    if found:
+                        continue
+                    if board in nonisomorphicC:
+                        multiple = c
+                        found = True
+                    elif board in nonisomorphicCC:
+                        multiple = c * c
+                        found = True
+                    elif board in nonisomorphic1:
+                        multiple = 1
+                        found = True
+                    elif board in nonisomorphicA:
+                        multiple = a
+                        found = True
+                    elif board in nonisomorphicAB:
+                        multiple = a * b
+                        found = True
+                    elif board in nonisomorphicB:
+                        multiple = b
+                        found = True
+                    elif board in nonisomorphicD:
+                        multiple = d
+                        found = True
+                    elif board in nonisomorphicAD:
+                        multiple = a * d
+                        found = True
+
+                    if found:
+                        continue
+
+                    #flip board
+                    board = list(reversed(board))
+                    if board in nonisomorphicC:
+                        multiple = c
+                        found = True
+                    elif board in nonisomorphicCC:
+                        multiple = c * c
+                        found = True
+                    elif board in nonisomorphic1:
+                        multiple = 1
+                        found = True
+                    elif board in nonisomorphicA:
+                        multiple = a
+                        found = True
+                    elif board in nonisomorphicAB:
+                        multiple = a * b
+                        found = True
+                    elif board in nonisomorphicB:
+                        multiple = b
+                        found = True
+                    elif board in nonisomorphicD:
+                        multiple = d
+                        found = True
+                    elif board in nonisomorphicAD:
+                        multiple = a * d
+                        found = True
+
+                    #flip board back
+                    board = list(reversed(board))
+                    #board = list(map(list, zip(*board)))
+
+
+
+
+                    #rotate board
+                    board = list(map(list, zip(*board)))[::-1]
+
+                if multiple == 0:
+                    print("board not found" + str(board))
+                else:
+                    evaluation = evaluation * multiple
+
+        #print(evaluation) 
+        if returnValue:
+            return evaluation
+        else:
+            return (0<winners.count(evaluation))
 
     def getAction(self, gameState, gameRules):
 
-        start_time = time.time()
+        def playerValue(gameState, gameRules, player, d, muteOutput):
+            actions = gameState.getLegalActions(gameRules)
+            tempAction = actions[0]
 
-        timed_func = util.TimeoutFunction(self.chooseAction, int(self.maxTimeOut))
+            for action in random.sample(actions, len(actions)):
+                newGameState = gameState.generateSuccessor(action)
+                evalNumber = self.evalGame(newGameState, gameRules, True)
+                if gameRules.isGameOver(newGameState.boards):
+                    continue
+                if evalNumber in self.exploredSet:
+                    return (player, action)
+                #if not muteOutput:
+                #    print("max action" + str(action) + " depth " + str(d) + " " + str(self.evalGame(newGameState, gameRules, True)))
+                if player:
+                    winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player, d+1, muteOutput)
+                else:
+                    winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player, d, muteOutput)
+                #only accept a sure thing win, don't explore the same losing state twice
+                if winnerPlayer == player:
+                    #if not muteOutput:
+                    #    print("player: " + str(player) + " move " + str(action) + " " + str(evalNumber)+ " " + str(d))
+                    return (player, action)
+                    if evalNumber not in self.exploredSet:
+                        self.exploredSet.append(evalNumber)
+
+            return (not player, tempAction)
+
+        #depending on whose move and depth, either maximise or minimise
+        def minimaxDecision(gameState, gameRules, player, d, muteOutput):
+
+            if gameRules.isGameOver(gameState.boards):
+                #if the game is over, it's the current player's win
+                return (player, '')
+            if self.depth < d:
+                # if you reach depth limit, evaluate
+                return (self.evalGame(gameState, gameRules, False), '')
+
+            return playerValue(gameState, gameRules, player, d, muteOutput)
+
+        start_time = time.time()
+        timed_func = util.TimeoutFunction(minimaxDecision, int(self.maxTimeOut))
         try:
-            winnerAction, winnerPlayer = timed_func(gameState, gameRules, True, 4)
+            winnerPlayer, winnerAction = timed_func(gameState, gameRules, True, 1, True)
+            if not self.evalGame(gameState.generateSuccessor(winnerAction), gameRules, False):
+                print(str(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules, True))+" "+str(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules, False))+" "+str(winnerAction))
+                print(str(gameState.generateSuccessor(winnerAction).boards))
+                #timed_func(gameState, gameRules, True, 1, False)
+
+        except util.TimeoutFunctionException:
+            print("Move Timeout!")
+            winnerAction = random.choice(gameState.getLegalActions(gameRules))
+
+        #print(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules)) 
+
+        return winnerAction
+
+        util.raiseNotDefined()
+
+class TicTacToeAgent2():
+    """
+      When move first, the TicTacToeAgent should be able to chooses an action to always beat 
+      the second player.
+
+      You have to implement the function getAction(self, gameState, gameRules), which returns the 
+      optimal action (guarantee to win) given the gameState and the gameRules. The return action
+      should be a string consists of a letter [A, B, C] and a number [0-8], e.g. A8. 
+
+      You are welcome to add more helper functions in this class to help you. You can also add the
+      helper function in class GameRules, as function getAction() will take GameRules as input.
+      
+      However, please don't modify the name and input parameters of the function getAction(), 
+      because autograder will call this function to check your algorithm.
+    """
+    def __init__(self):
+        """ 
+          You can initialize some variables here, but please do not modify the input parameters.
+        """
+        self.maxTimeOut = 30
+        self.depth = 3
+        self.exploredSet = []
+
+    #sum of all the trues
+    def trueValues(self, board):
+        #convert to 1D if requried
+        if 3==len(board):
+            board = board[0] + board[1] + board[2]
+        return (sum([i for i, x in enumerate(board) if x]), board.count(True))
+
+    #rotate the board around until you get the minimum state for comparison
+    def transposeMiniBoard(self, board):
+        #break board into 2d array if required
+        if 3!=len(board):
+            board = [board[i:i+3] for i in range(0, len(board), 3)]
+        lowestBoard = board[:]
+        lowestValue = self.trueValues(board)
+
+        # rotated = zip(*original[::-1])
+        # list(map(list, zip(*l)))
+        if lowestValue > self.trueValues(list(map(list, zip(*board)))):
+            lowestBoard = list(map(list, zip(*board)))
+            lowestValue = self.trueValues(lowestBoard)
+
+        for i in range(3):
+            #rotate board
+            board = list(map(list, zip(*board)))[::-1]
+            if lowestValue > self.trueValues(board):
+                lowestBoard = board[:]
+                lowestValue = self.trueValues(lowestBoard)
+
+            #flip board
+            board = list(map(list, zip(*board)))
+            if lowestValue > self.trueValues(board):
+                lowestBoard = board[:]
+                lowestValue = self.trueValues(lowestBoard)
+
+            #flip board back
+            board = list(map(list, zip(*board)))
+
+        return lowestBoard
+
+    """
+    def evalGame(self, gameState, gameRules, returnValue):
+        #contains dictionary of 102 non-isomorphic positions
+        #winning combos = c2, a, b2, bc
+        #win returns true, lose returns false
+
+        #anything containing d or ab is a loss
+
+        a=2
+        b=3
+        c=5
+        d=7
+
+        winners = [c*c, a, b*b, b*c]
+        evaluation = 1
+
+        for board in gameState.boards:
+            #rotate board to match with 102 nonisompophic ways
+            board = self.transposeMiniBoard(board)
+            trueValues, numTrues = self.trueValues(board)
+
+            if gameRules.deadTest(board[0] + board[1] + board[2]):
+                evaluation = evaluation * 1
+            elif 0==numTrues:
+                evaluation = evaluation * c
+            elif 1==numTrues:
+                if board[1][1]:
+                    evaluation = evaluation * c * c
+                else:
+                    evaluation = evaluation * 1
+            elif 6==numTrues:
+                evaluation = evaluation * a
+            elif 5==numTrues:
+                if (board[0][1] and board[1][0] and board[1][2]):
+                    evaluation = evaluation * b
+                else:
+                    evaluation = evaluation * a
+            elif 2==numTrues:
+                if 1==trueValues:
+                    #print(d)
+                    #return False
+                    if returnValue:
+                        return a*d
+                    else:
+                        return False
+                elif 8==trueValues or (4==trueValues and not board[0][0]):
+                    evaluation = evaluation * a
+                else:
+                    evaluation = evaluation * b
+            elif 3==numTrues:
+                if 12==trueValues:
+                    evaluation = evaluation * 1
+                elif 4==trueValues or (9==trueValues and board[0][1] and board[1][0]):
+                    evaluation = evaluation * b
+                elif (9==trueValues and not board[0][1]) or (6==trueValues and not board[0][1]) or (5==trueValues and not board[0][1]):
+                    evaluation = evaluation * a
+                else:
+                    #print(d)
+                    #return False
+                    if returnValue:
+                        return d
+                    else:
+                        return False
+            elif 4==numTrues:
+                if (12==trueValues and not board[0][0]) or (13==trueValues and board[0][1]):
+                    #print(d)
+                    #return False
+                    if returnValue:
+                        return a * b
+                    else:
+                        return False
+                elif 8==trueValues or (9==trueValues and not board[1][1]) or (16==trueValues and not board[1][1]) or (12==trueValues and board[1][0] and board[0][1]):
+                    evaluation = evaluation * a
+                else:
+                    evaluation = evaluation * b
+            else:
+                print("wtf")
+
+        #print(evaluation) 
+        if returnValue:
+            return evaluation
+        else:
+            return (0<winners.count(evaluation))
+    """
+
+    def evalGame(self, gameState, gameRules, returnValue):
+        #contains dictionary of 102 non-isomorphic positions
+        #winning combos = c2, a, b2, bc
+        #win returns true, lose returns false
+
+        #anything containing d or ab is a loss
+
+        a=2
+        b=3
+        c=5
+        d=7
+
+        winners = [c*c, a, b*b, b*c]
+        evaluation = 1
+
+        nonisomorphicC =  [[[False, False, False], [False, False, False], [False, False, False]]]
+        nonisomorphicCC =  [[[False, False, False], [False, True, False], [False, False, False]]]
+        nonisomorphic1 =  [[[False, True, False], [False, False, False], [False, False, False]],
+                        [[True, False, False], [False, False, False], [False, False, False]],
+                        [[True, False, False], [False, False, True], [False, True, False]]
+                        ]
+
+        nonisomorphicA =  [[[True, False, False], [False, False, False], [False, False, True]],
+                        [[False, True, False], [True, False, False], [False, False, False]],
+                        [[False, True, False], [False, False, False], [False, True, False]],
+                        [[True, True, False], [False, False, False], [True, False, False]],
+                        [[True, False, True], [False, True, False], [False, False, False]],
+                        [[True, False, True], [False, False, False], [False, True, False]],
+                        [[True, False, False], [False, True, True], [False, False, False]],
+                        [[True, True, False], [True, True, False], [False, False, False]],
+                        [[True, True, False], [True, False, True], [False, False, False]],
+                        [[True, True, False], [True, False, False], [False, False, True]],
+                        [[True, True, False], [False, False, False], [False, True, True]],
+                        [[True, False, True], [False, False, False], [True, False, True]],
+                        [[False, True, False], [True, False, True], [False, True, False]],
+                        [[True, True, False], [False, True, True], [True, False, False]],
+                        [[True, True, False], [False, False, True], [True, True, False]],
+                        [[True, True, False], [False, False, True], [True, False, True]],
+                        [[True, True, False], [True, False, True], [False, True, True]]
+                        ]
+        nonisomorphicB =  [[[True, False, True], [False, False, False], [False, False, False]],
+                        [[True, False, False], [False, True, False], [False, False, False]],
+                        [[True, False, False], [False, False, True], [False, False, False]],
+                        [[False, True, False], [False, True, False], [False, False, False]],
+                        [[True, True, False], [True, False, False], [False, False, False]],
+                        [[False, True, False], [True, False, True], [False, False, False]],
+                        [[True, True, False], [False, True, True], [False, False, False]],
+                        [[True, True, False], [False, True, False], [True, False, False]],
+                        [[True, True, False], [False, False, True], [True, False, False]],
+                        [[True, True, False], [False, False, False], [True, True, False]],
+                        [[True, True, False], [False, False, False], [True, False, True]],
+                        [[True, False, True], [False, True, False], [False, True, False]],
+                        [[True, False, False], [False, True, True], [False, True, False]],
+                        [[True, True, False], [True, False, True], [False, True, False]],
+                        [[True, True, False], [True, False, True], [False, False, True]]
+                        ]
+        nonisomorphicAD =  [[[True, True, False], [False, False, False], [False, False, False]]]
+        nonisomorphicD =  [[[True, True, False], [False, False, True], [False, False, False]],
+                        [[True, True, False], [False, False, False], [False, True, False]],
+                        [[True, True, False], [False, False, False], [False, False, True]]
+                        ]
+        nonisomorphicAB =  [[[True, True, False], [False, True, False], [False, False, False]],
+                        [[True, False, True], [False, False, False], [True, False, False]],
+                        [[False, True, False], [True, True, False], [False, False, False]],
+                        [[True, True, False], [False, False, True], [False, True, False]],
+                        [[True, True, False], [False, False, True], [False, False, True]]
+                        ]
+
+        for board in gameState.boards:
+            #break board into 2d array if required
+            if 3!=len(board):
+                board = [board[i:i+3] for i in range(0, len(board), 3)]
+
+            if gameRules.deadTest(board[0] + board[1] + board[2]):
+                evaluation = evaluation * 1
+            else:
+                #rotate board to match with 102 nonisompophic ways
+                found = False
+                multiple = 0
+
+                for i in range(4):
+                    if found:
+                        continue
+                    if board in nonisomorphicC:
+                        multiple = c
+                        found = True
+                    elif board in nonisomorphicCC:
+                        multiple = c * c
+                        found = True
+                    elif board in nonisomorphic1:
+                        multiple = 1
+                        found = True
+                    elif board in nonisomorphicA:
+                        multiple = a
+                        found = True
+                    elif board in nonisomorphicAB:
+                        multiple = a * b
+                        found = True
+                    elif board in nonisomorphicB:
+                        multiple = b
+                        found = True
+                    elif board in nonisomorphicD:
+                        multiple = d
+                        found = True
+                    elif board in nonisomorphicAD:
+                        multiple = a * d
+                        found = True
+
+                    if found:
+                        continue
+
+                    #flip board
+                    board = list(reversed(board))
+                    if board in nonisomorphicC:
+                        multiple = c
+                        found = True
+                    elif board in nonisomorphicCC:
+                        multiple = c * c
+                        found = True
+                    elif board in nonisomorphic1:
+                        multiple = 1
+                        found = True
+                    elif board in nonisomorphicA:
+                        multiple = a
+                        found = True
+                    elif board in nonisomorphicAB:
+                        multiple = a * b
+                        found = True
+                    elif board in nonisomorphicB:
+                        multiple = b
+                        found = True
+                    elif board in nonisomorphicD:
+                        multiple = d
+                        found = True
+                    elif board in nonisomorphicAD:
+                        multiple = a * d
+                        found = True
+
+                    #flip board back
+                    board = list(reversed(board))
+                    #board = list(map(list, zip(*board)))
+
+
+
+
+                    #rotate board
+                    board = list(map(list, zip(*board)))[::-1]
+
+                if multiple == 0:
+                    print("board not found" + str(board))
+                else:
+                    evaluation = evaluation * multiple
+
+        #print(evaluation) 
+        if returnValue:
+            return evaluation
+        else:
+            return (0<winners.count(evaluation))
+
+    def getAction(self, gameState, gameRules):
+
+        def playerValue(gameState, gameRules, player, d, muteOutput):
+            actions = gameState.getLegalActions(gameRules)
+            tempAction = actions[0]
+
+            for action in random.sample(actions, len(actions)):
+                newGameState = gameState.generateSuccessor(action)
+                evalNumber = self.evalGame(newGameState, gameRules, True)
+                if gameRules.isGameOver(newGameState.boards):
+                    continue
+                if evalNumber in self.exploredSet:
+                    return (player, action)
+                #if not muteOutput:
+                #    print("max action" + str(action) + " depth " + str(d) + " " + str(self.evalGame(newGameState, gameRules, True)))
+                if player:
+                    winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player, d+1, muteOutput)
+                else:
+                    winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player, d, muteOutput)
+                #only accept a sure thing win, don't explore the same losing state twice
+                if winnerPlayer == player:
+                    #if not muteOutput:
+                    #    print("player: " + str(player) + " move " + str(action) + " " + str(evalNumber)+ " " + str(d))
+                    return (player, action)
+                    if evalNumber not in self.exploredSet:
+                        self.exploredSet.append(evalNumber)
+
+            return (not player, tempAction)
+
+        #depending on whose move and depth, either maximise or minimise
+        def minimaxDecision(gameState, gameRules, player, d, muteOutput):
+
+            if gameRules.isGameOver(gameState.boards):
+                #if the game is over, it's the current player's win
+                return (player, '')
+            if self.depth < d:
+                # if you reach depth limit, evaluate
+                return (self.evalGame(gameState, gameRules, False), '')
+
+            return playerValue(gameState, gameRules, player, d, muteOutput)
+
+        start_time = time.time()
+        timed_func = util.TimeoutFunction(minimaxDecision, int(self.maxTimeOut))
+        try:
+            winnerPlayer, winnerAction = timed_func(gameState, gameRules, True, 1, True)
+            #if not self.evalGame(gameState.generateSuccessor(winnerAction), gameRules, False):
+                #print(str(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules, True))+" "+str(self.evalGame(gameState.generateSuccessor(winnerAction), gameRules, False))+" "+str(winnerAction))
+                #print(str(gameState.generateSuccessor(winnerAction).boards))
+                #timed_func(gameState, gameRules, True, 1, False)
 
         except util.TimeoutFunctionException:
             print("Move Timeout!")
@@ -299,6 +858,7 @@ class randomAgent():
       If you like, you can also set both players to be randomAgent, then you can happily see two 
       random agents fight with each other.
     """
+
     def getAction(self, gameState, gameRules):
         actions = gameState.getLegalActions(gameRules)
         return random.choice(actions)
@@ -309,14 +869,12 @@ class keyboardAgent():
       This keyboardAgent return the action based on the keyboard input
       It will check whether the input actions is legal or not.
     """
+
     def checkUserInput(self, gameState, action, gameRules):
         actions = gameState.getLegalActions(gameRules)
         return action in actions
 
-
     def getAction(self, gameState, gameRules):
-
-        print (str(self.evalGame(gameState, gameRules)))
 
         action = input("Your move: ")
         while not self.checkUserInput(gameState, action, gameRules):
@@ -346,7 +904,8 @@ class Game():
         else:
             self.AIPlayer = TicTacToeAgent()
         if AIforHuman:
-            self.HumanAgent = randomAgent()
+            self.HumanAgent = TicTacToeAgent2()
+            #self.HumanAgent = randomAgent()
         else:
             self.HumanAgent = keyboardAgent()
 
@@ -360,7 +919,6 @@ class Game():
         for i in range(self.numOfGames):
             gameState = GameState()
             agentIndex = 0 # 0 for First Player (AI), 1 for Second Player (Human)
-            print("start time: " + str(time.ctime(int(time.time()))))
             while True:
                 if agentIndex == 0: 
                     timed_func = util.TimeoutFunction(self.AIPlayer.getAction, int(self.maxTimeOut))
@@ -385,7 +943,6 @@ class Game():
 
                 agentIndex  = (agentIndex + 1) % 2
             if agentIndex == 0:
-                print("end time: " + str(time.ctime(int(time.time()))))
                 print("****player 2 wins game %d!!****" % (i+1))
             else:
                 numOfWins += 1
