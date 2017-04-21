@@ -64,9 +64,9 @@ class ReflexAgent(Agent):
         prevCapsules = currentGameState.getCapsules()
         newCapsules = successorGameState.getCapsules()
 
-        #return maximum availablenumber if you've won
+        #return maximum available number if you've won
         if successorGameState.isWin():
-          return sys.float_info.max
+          return float('inf')
 
         utility = successorGameState.getScore()
 
@@ -91,7 +91,7 @@ class ReflexAgent(Agent):
           utility -= manhattanDistance(capsule, newPos)
 
         #eat closest food first, all others are pretty much irrelevant
-        closestFood = sys.float_info.max
+        closestFood = float('inf')
         for food in newFood.asList():
           closestFood = min(manhattanDistance(food, newPos), closestFood)
         utility -= closestFood
@@ -163,8 +163,9 @@ class MinimaxAgent(MultiAgentSearchAgent):
         """
 
         def minValue(gameState, ghost, d):
-          val = sys.maxsize
+          val = float('inf')
 
+          # find the action that is best for the ghost (what that action is doesn't matter)
           for action in gameState.getLegalActions(ghost):
             tempState =gameState.generateSuccessor(ghost, action)
             tempVal, action = minimaxDecision(tempState, ghost +1, d)
@@ -175,10 +176,11 @@ class MinimaxAgent(MultiAgentSearchAgent):
           return val
 
         def maxValue(gameState, d):
-          val = -sys.maxsize
+          val = float('-inf')
           #default move is stop
           bestAction = 'Stop'
 
+          #find best action for Pacman, and return it along with the eval function
           for action in gameState.getLegalActions(0):
             tempState =gameState.generateSuccessor(0, action)
             tempVal, tempAction = minimaxDecision(tempState, 1, d)
@@ -194,7 +196,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
           if agent >= gameState.getNumAgents():
             agent = 0
             d += 1
-          #return eval fn for  
+          #return eval fn when game finished or depth reached
           if (gameState.isWin() or gameState.isLose() or self.depth < d):
             return (self.evaluationFunction(gameState), '')
           #pacman's move gets max value, the ghosts get min value          
@@ -221,21 +223,21 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           Returns the minimax action using self.depth and self.evaluationFunction
         """
         def minValue(gameState, ghost, d, alpha, beta):
-          val = sys.maxsize
+          val = float('inf')
 
           for action in gameState.getLegalActions(ghost):
             tempState =gameState.generateSuccessor(ghost, action)
             tempVal, action = abPruning(tempState, ghost +1, d, alpha, beta)
             if tempVal < val:
               val = tempVal
-            if tempVal < alpha:
+            if val < alpha:
                 return val
             beta = min(beta, tempVal)
 
           return val
 
         def maxValue(gameState, d, alpha, beta):
-          val = -sys.maxsize
+          val = float('-inf')
           #default best move is stop
           bestAction = 'Stop'
 
@@ -245,7 +247,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
             if tempVal > val:
               val = tempVal
               bestAction = action
-            if tempVal > beta:
+            if val > beta:
                 return (val, action)
             alpha = max(alpha, tempVal)
           return (val, bestAction)
@@ -256,7 +258,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           if agent >= gameState.getNumAgents():
             agent = 0
             d += 1
-          #return eval fn for
+          #return eval fn when game finished or depth reached
           if (gameState.isWin() or gameState.isLose() or self.depth < d):
             return (self.evaluationFunction(gameState), '')
           #pacman's move gets max value, the ghosts get min value          
@@ -268,7 +270,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         #first depth = 1, first agent = pacman (zero)
         d = 1
         firstAgent = 0
-        value, action = abPruning(gameState, firstAgent, d, -sys.maxsize, sys.maxsize)
+        value, action = abPruning(gameState, firstAgent, d, float('-inf'), float('inf'))
         return action
 
         util.raiseNotDefined()
@@ -292,15 +294,17 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           val = 0
           legalActions = gameState.getLegalActions(ghost)
 
+          #sum all values
           for action in legalActions:
             tempState =gameState.generateSuccessor(ghost, action)
             tempVal, action = expectimaxDecision(tempState, ghost +1, d)
             val += tempVal
 
+          #return average utility value
           return val / len(legalActions)
 
         def maxValue(gameState, d):
-          val = -sys.maxsize
+          val = float('-inf')
           #default best move is stop
           bestAction = 'Stop'
 
@@ -319,7 +323,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           if agent >= gameState.getNumAgents():
             agent = 0
             d += 1
-          #return eval fn for  
+          #return eval fn when game finished or depth reached
           if (gameState.isWin() or gameState.isLose() or self.depth < d):
             return (self.evaluationFunction(gameState), '')
           #pacman's move gets max value, the ghosts get min value          
@@ -345,9 +349,9 @@ def betterEvaluationFunction(currentGameState):
   """
   "*** YOUR CODE HERE ***"
   evaluation = currentGameState.getScore()
-  #return maximum availablenumber if you've won
+  #return maximum available number if you've won
   if currentGameState.isWin():
-    return sys.float_info.max
+    return float('inf')
   newPos = currentGameState.getPacmanPosition()
   #subtract for ghost distance except under scared timer
   for ghostState in currentGameState.getGhostStates():
@@ -359,44 +363,17 @@ def betterEvaluationFunction(currentGameState):
       #when he's super close, follow the advice of the Monty Python knights and RUN AWAY!
       elif 2 > mDistance:
         evaluation -= 100
+  #try to get close to capsules
   for capsule in currentGameState.getCapsules():
     evaluation -= manhattanDistance(capsule, newPos)
   sumClosestFood = 0
-  closestFood = sys.float_info.max
+  closestFood = float('inf')
+  #reduce distance to closest food as highest priority, but to avoid stalemate, also reduce distance to ALL food.
   for food in currentGameState.getFood().asList():
     closestFood = min(manhattanDistance(food, newPos), closestFood)
     sumClosestFood -= manhattanDistance(food, newPos)/10
+  #by including the number of food it benefits states which actually eat a food, causing the closest food to be further away.
   evaluation -= closestFood + currentGameState.getNumFood() * 5 - sumClosestFood
-
-  """
-  for action in currentGameState.getLegalActions():
-    tempEval = 0
-    successorGameState = currentGameState.generatePacmanSuccessor(action)
-    tempEval = successorGameState.getScore()
-    #return maximum availablenumber if you've won
-    if successorGameState.isWin():
-      return sys.float_info.max
-    newPos = successorGameState.getPacmanPosition()
-    #subtract for ghost distance except under scared timer
-    for ghostState in successorGameState.getGhostStates():
-      mDistance = manhattanDistance(ghostState.configuration.getPosition(), newPos)
-      if ghostState.scaredTimer <= 1:
-        #be careful when ghost is close
-        if 10 > mDistance:
-          tempEval -= (10-mDistance)*10
-        #when he's super close, follow the advice of the Monty Python knights and RUN AWAY!
-        elif 2 > mDistance:
-          tempEval  -= 1000
-    for capsule in successorGameState.getCapsules():
-      tempEval -= manhattanDistance(capsule, newPos)
-    sumClosestFood = 0
-    closestFood = sys.float_info.max
-    for food in successorGameState.getFood().asList():
-      closestFood = min(manhattanDistance(food, newPos), closestFood)
-      sumClosestFood -= manhattanDistance(food, newPos)/10
-    tempEval += sumClosestFood - successorGameState.getNumFood() * 10 + closestFood * 2
-    evaluation += tempEval /10
-  """
 
   return evaluation
   util.raiseNotDefined()
