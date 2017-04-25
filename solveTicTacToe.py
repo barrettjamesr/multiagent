@@ -309,10 +309,12 @@ class TicTacToeAgent():
 
     def getAction(self, gameState, gameRules):
 
+        #both players are trying to make themselves the winning player so only one function is needed
         def playerValue(gameState, gameRules, player):
             actions = gameState.getLegalActions(gameRules)
             tempAction = actions[0]
 
+            #randomise action list so that each test iteration produces a different result
             for action in random.sample(actions, len(actions)):
                 newGameState = gameState.generateSuccessor(action)
                 evalNumber = self.evalGame(newGameState, gameRules, True)
@@ -326,31 +328,23 @@ class TicTacToeAgent():
                 if evalNumber in self.winnerSet:
                     return (player, action)
                 #change player with new board
-                winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player)
-                
-                #if player:
-                #    winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player, d+1, muteOutput)
-                #else:
-                #    winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player, d, muteOutput)
-                #only accept a sure thing win, don't explore the same losing state twice
+                #winnerPlayer, winnerAction = minimaxDecision(newGameState, gameRules, not player)
+                winnerPlayer, winnerAction = playerValue(newGameState, gameRules, not player)
+                #only accept a sure thing win
                 if winnerPlayer == player:
-                    if 0==len(self.winnerSet) or evalNumber not in self.winnerSet:
+                    #add state to explored winner set
+                    if evalNumber not in self.winnerSet:
                         self.winnerSet.append(evalNumber)
                     return (player, action)
+                #add state to explored loser set
                 elif evalNumber not in self.loserSet:
                     self.loserSet.append(evalNumber)
 
             return (not player, tempAction)
 
-        #depending on whose move and depth, either maximise or minimise
-        def minimaxDecision(gameState, gameRules, player):
-            if gameRules.isGameOver(gameState.boards):
-                #if the game is over, it's the current player's win
-                return (player, '')
-            return playerValue(gameState, gameRules, player)
-
         start_time = time.time()
-        timed_func = util.TimeoutFunction(minimaxDecision, int(self.maxTimeOut))
+        timed_func = util.TimeoutFunction(playerValue, int(self.maxTimeOut))
+
         try:
             winnerPlayer, winnerAction = timed_func(gameState, gameRules, True)
 
@@ -416,8 +410,7 @@ class Game():
         else:
             self.AIPlayer = TicTacToeAgent()
         if AIforHuman:
-            self.HumanAgent = TicTacToeAgent()
-            #self.HumanAgent = randomAgent()
+            self.HumanAgent = randomAgent()
         else:
             self.HumanAgent = keyboardAgent()
 

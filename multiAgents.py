@@ -97,7 +97,7 @@ class ReflexAgent(Agent):
         utility -= closestFood
 
         #waiting for the ghost to eat you is bad
-        if action == Directions.STOP:
+        if Directions.STOP == action:
           utility -= 5
 
         return utility
@@ -200,7 +200,7 @@ class MinimaxAgent(MultiAgentSearchAgent):
           if (gameState.isWin() or gameState.isLose() or self.depth < d):
             return (self.evaluationFunction(gameState), '')
           #pacman's move gets max value, the ghosts get min value          
-          if (agent == 0):
+          if 0 == agent:
             return maxValue(gameState, d)
           else:
             return (minValue(gameState, agent, d), '')
@@ -262,7 +262,7 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
           if (gameState.isWin() or gameState.isLose() or self.depth < d):
             return (self.evaluationFunction(gameState), '')
           #pacman's move gets max value, the ghosts get min value          
-          if (agent == 0):
+          if 0 == agent:
             return maxValue(gameState, d, alpha, beta)
           else:
             return (minValue(gameState, agent, d, alpha, beta), '')
@@ -327,7 +327,7 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
           if (gameState.isWin() or gameState.isLose() or self.depth < d):
             return (self.evaluationFunction(gameState), '')
           #pacman's move gets max value, the ghosts get min value          
-          if (agent == 0):
+          if 0 == agent:
             return maxValue(gameState, d)
           else:
             return (expectiValue(gameState, agent, d), '')
